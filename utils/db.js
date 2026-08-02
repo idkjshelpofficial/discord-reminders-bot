@@ -21,19 +21,16 @@ function initDB() {
           currentStreak INTEGER DEFAULT 0,
           bestStreak INTEGER DEFAULT 0,
           lastCheckIn TEXT,
-          shields INTEGER DEFAULT 0,
-          recoveryCount INTEGER DEFAULT 0
+          inRecoveryMode INTEGER DEFAULT 0,
+          recoveryDaysUsed INTEGER DEFAULT 0
         )
       `);
 
       db.run(`
-        CREATE TABLE IF NOT EXISTS reminders (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          userId TEXT,
-          time TEXT,
-          message TEXT,
-          channelId TEXT,
-          type TEXT
+        CREATE TABLE IF NOT EXISTS reminders_state (
+          userId TEXT PRIMARY KEY,
+          lastDayStart TEXT,
+          hasUpdatedToday INTEGER DEFAULT 0
         )
       `, err => {
         if (err) reject(err);
