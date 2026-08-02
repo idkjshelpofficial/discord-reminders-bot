@@ -52,5 +52,3 @@ function initDB() {
     });
   });
 }
-
-module.exports = { getDB, initDB };
