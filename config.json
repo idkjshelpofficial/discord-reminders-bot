@@ -1,10 +1,14 @@
 {
   "dayStart": "05:00",
-  "gracePeriodHours": 12,
-  "recoveryPercentage": 0.2,
-  "enableShields": true,
-  "maxShields": 3,
-  "embedColor": "#00AAFF",
+  "embedColor": "#FF0000",
   "timezone": "America/New_York",
-  "defaultReminderTimes": ["14:00", "18:00", "22:00"]
+
+  "streakChannelId": "1523015791564427315",
+  "reminderRoleId": "1524545537510998078",
+
+  "reminderHours": [2, 4, 6],
+  "resetHour": 7,
+  "recoveryCutPercentage": 0.25,
+  "maxRecoveryDays": 3
 }
+
