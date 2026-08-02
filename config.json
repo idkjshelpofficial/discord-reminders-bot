@@ -1,0 +1,10 @@
+{
+  "dayStart": "05:00",
+  "gracePeriodHours": 12,
+  "recoveryPercentage": 0.2,
+  "enableShields": true,
+  "maxShields": 3,
+  "embedColor": "#00AAFF",
+  "timezone": "America/New_York",
+  "defaultReminderTimes": ["14:00", "18:00", "22:00"]
+}
