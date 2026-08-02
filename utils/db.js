@@ -35,7 +35,6 @@ function initDB() {
         )
       `);
 
-      // Auto-add fails column if missing
       db.get("PRAGMA table_info(streaks)", (err, rows) => {
         if (err) return reject(err);
 
