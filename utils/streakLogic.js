@@ -2,6 +2,7 @@ const { getDB } = require('./db');
 const { getNow, isSameStreakDay, getDayStart } = require('./time');
 const config = require('../config.json');
 
+// -------------------- GET USER STREAK --------------------
 function getUserStreak(userId) {
   const db = getDB();
   return new Promise((resolve, reject) => {
@@ -14,7 +15,8 @@ function getUserStreak(userId) {
           bestStreak: 0,
           lastCheckIn: null,
           inRecoveryMode: 0,
-          recoveryDaysUsed: 0
+          recoveryDaysUsed: 0,
+          fails: 0
         });
       }
       resolve(row);
@@ -22,19 +24,21 @@ function getUserStreak(userId) {
   });
 }
 
+// -------------------- SAVE USER STREAK --------------------
 function saveUserStreak(streak) {
   const db = getDB();
   return new Promise((resolve, reject) => {
     db.run(
       `
-      INSERT INTO streaks (userId, currentStreak, bestStreak, lastCheckIn, inRecoveryMode, recoveryDaysUsed)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO streaks (userId, currentStreak, bestStreak, lastCheckIn, inRecoveryMode, recoveryDaysUsed, fails)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(userId) DO UPDATE SET
         currentStreak = excluded.currentStreak,
         bestStreak = excluded.bestStreak,
         lastCheckIn = excluded.lastCheckIn,
         inRecoveryMode = excluded.inRecoveryMode,
-        recoveryDaysUsed = excluded.recoveryDaysUsed
+        recoveryDaysUsed = excluded.recoveryDaysUsed,
+        fails = excluded.fails
       `,
       [
         streak.userId,
@@ -42,7 +46,8 @@ function saveUserStreak(streak) {
         streak.bestStreak,
         streak.lastCheckIn,
         streak.inRecoveryMode,
-        streak.recoveryDaysUsed
+        streak.recoveryDaysUsed,
+        streak.fails
       ],
       err => {
         if (err) reject(err);
@@ -52,6 +57,7 @@ function saveUserStreak(streak) {
   });
 }
 
+// -------------------- REMINDER STATE --------------------
 function getReminderState(userId) {
   const db = getDB();
   return new Promise((resolve, reject) => {
@@ -89,6 +95,7 @@ function saveReminderState(state) {
   });
 }
 
+// -------------------- MESSAGE STREAK UPDATE --------------------
 async function handleMessageStreak(userId) {
   const now = getNow();
   const nowISO = now.toISOString();
@@ -97,26 +104,21 @@ async function handleMessageStreak(userId) {
 
   const todayStart = getDayStart(now).toISOString();
 
-  // Ensure reminder state day is current
   if (state.lastDayStart !== todayStart) {
     state.lastDayStart = todayStart;
     state.hasUpdatedToday = 0;
   }
 
-  // Recovery mode
   if (streak.inRecoveryMode) {
     if (streak.recoveryDaysUsed <= config.maxRecoveryDays) {
       const cut = 1 - config.recoveryCutPercentage;
-      const newStreak = Math.ceil(streak.currentStreak * cut);
-      streak.currentStreak = newStreak;
+      streak.currentStreak = Math.ceil(streak.currentStreak * cut);
       streak.inRecoveryMode = 0;
       streak.recoveryDaysUsed = 0;
     } else {
-      // Recovery not allowed anymore, they must rebuild from 0
       streak.inRecoveryMode = 0;
     }
   } else {
-    // Normal streak increment if new day
     if (!isSameStreakDay(streak.lastCheckIn)) {
       streak.currentStreak += 1;
       if (streak.currentStreak > streak.bestStreak) {
@@ -134,32 +136,23 @@ async function handleMessageStreak(userId) {
   return streak;
 }
 
+// -------------------- MISSED RESET --------------------
 async function applyMissedReset(userId) {
   const streak = await getUserStreak(userId);
   const state = await getReminderState(userId);
 
-  // Only reset if they haven't updated today
   if (state.hasUpdatedToday) return streak;
 
-  // Reset streak and enter recovery mode
   streak.inRecoveryMode = 1;
   streak.recoveryDaysUsed = (streak.recoveryDaysUsed || 0) + 1;
   streak.currentStreak = 0;
   streak.fails = (streak.fails || 0) + 1;
 
-
   await saveUserStreak(streak);
   return streak;
 }
 
-module.exports = {
-  getUserStreak,
-  handleMessageStreak,
-  applyMissedReset,
-  getReminderState,
-  saveReminderState
-};
-
+// -------------------- ROLE UPDATES --------------------
 async function updateStreakRoles(member, currentStreak) {
   const rolesToGive = [];
   const rolesToRemove = [];
@@ -172,14 +165,12 @@ async function updateStreakRoles(member, currentStreak) {
     }
   }
 
-  // Add roles they qualify for
   for (const roleId of rolesToGive) {
     if (!member.roles.cache.has(roleId)) {
       await member.roles.add(roleId).catch(() => {});
     }
   }
 
-  // Remove roles they no longer qualify for
   for (const roleId of rolesToRemove) {
     if (member.roles.cache.has(roleId)) {
       await member.roles.remove(roleId).catch(() => {});
@@ -187,5 +178,13 @@ async function updateStreakRoles(member, currentStreak) {
   }
 }
 
-module.exports = { updateStreakRoles };
-
+// -------------------- EXPORT EVERYTHING --------------------
+module.exports = {
+  getUserStreak,
+  saveUserStreak,
+  getReminderState,
+  saveReminderState,
+  handleMessageStreak,
+  applyMissedReset,
+  updateStreakRoles
+};
