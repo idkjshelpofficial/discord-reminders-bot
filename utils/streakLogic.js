@@ -157,3 +157,33 @@ module.exports = {
   getReminderState,
   saveReminderState
 };
+
+async function updateStreakRoles(member, currentStreak) {
+  const rolesToGive = [];
+  const rolesToRemove = [];
+
+  for (const r of config.streakRoles) {
+    if (currentStreak >= r.min) {
+      rolesToGive.push(r.roleId);
+    } else {
+      rolesToRemove.push(r.roleId);
+    }
+  }
+
+  // Add roles they qualify for
+  for (const roleId of rolesToGive) {
+    if (!member.roles.cache.has(roleId)) {
+      await member.roles.add(roleId).catch(() => {});
+    }
+  }
+
+  // Remove roles they no longer qualify for
+  for (const roleId of rolesToRemove) {
+    if (member.roles.cache.has(roleId)) {
+      await member.roles.remove(roleId).catch(() => {});
+    }
+  }
+}
+
+module.exports = { updateStreakRoles };
+
