@@ -1,18 +1,32 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, Collection, REST, Routes } = require('discord.js');
+const {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  Collection,
+  REST,
+  Routes,
+  EmbedBuilder
+} = require('discord.js');
 const path = require('path');
 const fs = require('fs');
 const config = require('./config.json');
 const { initDB } = require('./utils/db');
 const { scheduleRemindersLoop } = require('./utils/reminderLogic');
+const { handleMessageStreak } = require('./utils/streakLogic');
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ],
   partials: [Partials.Channel]
 });
 
 client.commands = new Collection();
 
+// Load command files (remind, checkin still exist if you want them)
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
@@ -45,6 +59,7 @@ client.once('ready', async () => {
   scheduleRemindersLoop(client, config);
 });
 
+// Slash commands (remind/checkin)
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -60,6 +75,29 @@ client.on('interactionCreate', async interaction => {
     } else {
       await interaction.reply({ content: 'There was an error executing this command.', ephemeral: true });
     }
+  }
+});
+
+// Message-based streak updates
+client.on('messageCreate', async message => {
+  if (message.author.bot) return;
+  if (message.channel.id !== config.streakChannelId) return;
+
+  try {
+    const streak = await handleMessageStreak(message.author.id);
+
+    const embed = new EmbedBuilder()
+      .setColor(config.embedColor)
+      .setTitle('Streak Updated')
+      .setDescription(
+        `Your streak has been updated!\n` +
+        `Current streak: **${streak.currentStreak}**\n` +
+        `Best streak: **${streak.bestStreak}**`
+      );
+
+    await message.channel.send({ content: `<@${message.author.id}>`, embeds: [embed] });
+  } catch (err) {
+    console.error('Error updating streak from message:', err);
   }
 });
 
