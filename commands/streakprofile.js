@@ -18,11 +18,24 @@ module.exports = {
 
     const streak = await getUserStreak(user.id);
 
-    // Achievements
+    // Build achievements list
     const achievements = config.streakRoles
       .filter(r => streak.currentStreak >= r.min)
-      .map(r => `<@&${r.roleId}>`)
-      .join('\n・');
+      .map(r => `・<@&${r.roleId}> (${r.min}+)`)
+      .join('\n');
+
+    const achievementsText = achievements.length > 0 ? achievements : 'None yet';
+
+    // Rank based on current streak
+    let rank = 'Unranked';
+    const s = streak.currentStreak;
+
+    if (s >= 200) rank = '☀️ S Tier';
+    else if (s >= 150) rank = '🐦‍🔥 A Tier';
+    else if (s >= 100) rank = '❤️‍🔥 B Tier';
+    else if (s >= 50) rank = '🔥 C Tier';
+    else if (s >= 25) rank = '♨️ D Tier';
+    else if (s >= 10) rank = '🌡️ E Tier';
 
     const embed = new EmbedBuilder()
       .setColor(config.embedColor)
@@ -30,7 +43,11 @@ module.exports = {
       .addFields(
         {
           name: 'Achievements',
-          value: achievements.length > 0 ? `・${achievements}` : 'None yet'
+          value: achievementsText
+        },
+        {
+          name: 'Rank',
+          value: rank
         },
         {
           name: 'Info',
@@ -40,7 +57,8 @@ module.exports = {
             `↩・Recoveries: **${streak.recoveryDaysUsed}**\n` +
             `❌・Streak Fails: **${streak.fails || 0}**`
         }
-      );
+      )
+      .setFooter({ text: 'Weird StreakBot • Hybrid Streak System' });
 
     await interaction.reply({ embeds: [embed] });
   }
