@@ -1,0 +1,14 @@
+{
+  "name": "hybrid-discord-bot",
+  "version": "1.0.0",
+  "description": "Hybrid reminders + streak bot with SQLite",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "sqlite3": "^5.1.7",
+    "dotenv": "^16.4.5"
+  }
+}
