@@ -145,6 +145,8 @@ async function applyMissedReset(userId) {
   streak.inRecoveryMode = 1;
   streak.recoveryDaysUsed = (streak.recoveryDaysUsed || 0) + 1;
   streak.currentStreak = 0;
+  streak.fails = (streak.fails || 0) + 1;
+
 
   await saveUserStreak(streak);
   return streak;
