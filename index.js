@@ -87,12 +87,10 @@ client.on('messageCreate', async message => {
     const streak = await handleMessageStreak(message.author.id);
 
     if (streak.justUpdated) {
-      // NEW DAY UPDATE
       await message.reply(
         `🔥 Streak Updated!\nCurrent streak: **${streak.currentStreak}**\nBest streak: **${streak.bestStreak}**`
       );
     } else {
-      // ALREADY UPDATED TODAY
       await message.reply(`🕒 You already updated your streak today.`);
     }
 
@@ -100,3 +98,5 @@ client.on('messageCreate', async message => {
     console.error('Error updating streak from message:', err);
   }
 });
+
+client.login(process.env.DISCORD_TOKEN);
