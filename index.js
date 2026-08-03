@@ -86,34 +86,17 @@ client.on('messageCreate', async message => {
   try {
     const streak = await handleMessageStreak(message.author.id);
 
-    const embed = new EmbedBuilder()
-      .setColor(config.embedColor)
-      .setTitle('Streak Updated')
-      .setDescription(
-        `Your streak has been updated!\n` +
-        `Current streak: **${streak.currentStreak}**\n` +
-        `Best streak: **${streak.bestStreak}**`
+    if (streak.justUpdated) {
+      // NEW DAY UPDATE
+      await message.reply(
+        `🔥 Streak Updated!\nCurrent streak: **${streak.currentStreak}**\nBest streak: **${streak.bestStreak}**`
       );
+    } else {
+      // ALREADY UPDATED TODAY
+      await message.reply(`🕒 You already updated your streak today.`);
+    }
 
-    await message.channel.send({ content: `<@${message.author.id}>`, embeds: [embed] });
   } catch (err) {
     console.error('Error updating streak from message:', err);
   }
 });
-
-client.login(process.env.DISCORD_TOKEN);
-
-const streak = await handleMessageStreak(message.author.id);
-
-if (streak.justUpdated) {
-  // NEW DAY UPDATE
-  message.reply({
-    content: `🔥 Streak Updated!\nCurrent streak: **${streak.currentStreak}**\nBest streak: **${streak.bestStreak}**`
-  });
-} else {
-  // ALREADY UPDATED TODAY
-  message.reply({
-    content: `🕒 You already updated your streak today.`
-  });
-}
-
