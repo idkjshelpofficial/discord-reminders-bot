@@ -102,3 +102,18 @@ client.on('messageCreate', async message => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+const streak = await handleMessageStreak(message.author.id);
+
+if (streak.justUpdated) {
+  // NEW DAY UPDATE
+  message.reply({
+    content: `🔥 Streak Updated!\nCurrent streak: **${streak.currentStreak}**\nBest streak: **${streak.bestStreak}**`
+  });
+} else {
+  // ALREADY UPDATED TODAY
+  message.reply({
+    content: `🕒 You already updated your streak today.`
+  });
+}
+
