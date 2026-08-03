@@ -104,10 +104,14 @@ async function handleMessageStreak(userId) {
 
   const todayStart = getDayStart(now).toISOString();
 
+  const isNewDay = !isSameStreakDay(streak.lastCheckIn);
+
   if (state.lastDayStart !== todayStart) {
     state.lastDayStart = todayStart;
     state.hasUpdatedToday = 0;
   }
+
+  let justUpdated = false;
 
   if (streak.inRecoveryMode) {
     if (streak.recoveryDaysUsed <= config.maxRecoveryDays) {
@@ -115,15 +119,17 @@ async function handleMessageStreak(userId) {
       streak.currentStreak = Math.ceil(streak.currentStreak * cut);
       streak.inRecoveryMode = 0;
       streak.recoveryDaysUsed = 0;
+      justUpdated = true;
     } else {
       streak.inRecoveryMode = 0;
     }
   } else {
-    if (!isSameStreakDay(streak.lastCheckIn)) {
+    if (isNewDay) {
       streak.currentStreak += 1;
       if (streak.currentStreak > streak.bestStreak) {
         streak.bestStreak = streak.currentStreak;
       }
+      justUpdated = true;
     }
   }
 
@@ -133,8 +139,9 @@ async function handleMessageStreak(userId) {
   await saveUserStreak(streak);
   await saveReminderState(state);
 
-  return streak;
+  return { ...streak, justUpdated };
 }
+
 
 // -------------------- MISSED RESET --------------------
 async function applyMissedReset(userId) {
