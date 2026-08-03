@@ -35,9 +35,11 @@ function initDB() {
         )
       `);
 
-      db.get("PRAGMA table_info(streaks)", (err, rows) => {
+      // FIX: Use all() instead of get()
+      db.all("PRAGMA table_info(streaks)", (err, rows) => {
         if (err) return reject(err);
 
+        // rows is ALWAYS an array now
         const hasFails = rows.some(col => col.name === "fails");
 
         if (!hasFails) {
@@ -52,6 +54,7 @@ function initDB() {
     });
   });
 }
+
 
 module.exports = {
   getDB,
