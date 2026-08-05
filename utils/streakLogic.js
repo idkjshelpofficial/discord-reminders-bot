@@ -102,22 +102,43 @@ async function handleMessageStreak(userId) {
   const streak = await getUserStreak(userId);
   const state = await getReminderState(userId);
 
-  // Determine if it's a new streak day
+  const todayStart = getDayStart(now).toISOString();
   const isNewDay = !isSameStreakDay(streak.lastCheckIn);
+
+  // Reset reminder state if new day started
+  if (state.lastDayStart !== todayStart) {
+    state.lastDayStart = todayStart;
+    state.hasUpdatedToday = 0;
+  }
 
   let justUpdated = false;
 
-  if (isNewDay) {
-    streak.currentStreak += 1;
+  // Recovery mode logic
+  if (streak.inRecoveryMode) {
+    if (streak.recoveryDaysUsed < config.maxRecoveryDays) {
+      const cut = 1 - config.recoveryCutPercentage;
+      streak.currentStreak = Math.ceil(streak.currentStreak * cut);
+      streak.inRecoveryMode = 0;
+      streak.recoveryDaysUsed += 1;
+      justUpdated = true;
+    } else {
+      streak.currentStreak = 0;
+      streak.inRecoveryMode = 0;
+      streak.recoveryDaysUsed = 0;
+      streak.fails += 1;
+      justUpdated = true;
+    }
+  }
 
+  // Normal streak update
+  else if (isNewDay) {
+    streak.currentStreak += 1;
     if (streak.currentStreak > streak.bestStreak) {
       streak.bestStreak = streak.currentStreak;
     }
-
     justUpdated = true;
   }
 
-  // Update timestamps
   streak.lastCheckIn = nowISO;
   state.hasUpdatedToday = 1;
 
@@ -127,8 +148,6 @@ async function handleMessageStreak(userId) {
   return { ...streak, justUpdated };
 }
 
-
-
 // -------------------- MISSED RESET --------------------
 async function applyMissedReset(userId) {
   const streak = await getUserStreak(userId);
@@ -137,9 +156,8 @@ async function applyMissedReset(userId) {
   if (state.hasUpdatedToday) return streak;
 
   streak.inRecoveryMode = 1;
-  streak.recoveryDaysUsed = (streak.recoveryDaysUsed || 0) + 1;
-  streak.currentStreak = 0;
-  streak.fails = (streak.fails || 0) + 1;
+  streak.recoveryDaysUsed += 1;
+  streak.fails += 1;
 
   await saveUserStreak(streak);
   return streak;
@@ -170,7 +188,6 @@ async function updateStreakRoles(member, currentStreak) {
     }
   }
 }
-
 
 // -------------------- EXPORT EVERYTHING --------------------
 module.exports = {
