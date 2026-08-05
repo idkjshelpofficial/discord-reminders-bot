@@ -1,13 +1,12 @@
 const { getNow, getDayStart } = require('./time');
-const { 
-  applyMissedReset, 
-  getReminderState, 
-  saveReminderState 
+const {
+  applyMissedReset,
+  getReminderState,
+  saveReminderState
 } = require('./streakLogic');
 const config = require('../config.json');
 const { EmbedBuilder } = require('discord.js');
 
-// Get all users with the reminder role
 async function getUsersWithReminderRole(guild) {
   const role = guild.roles.cache.get(config.reminderRoleId);
   if (!role) return [];
@@ -30,7 +29,7 @@ async function processReminders(client) {
       const state = await getReminderState(userId);
       const todayStartISO = dayStart.toISOString();
 
-      // NEW DAY START — ping reminder role
+      // New day start: reset state + ping reminder role
       if (state.lastDayStart !== todayStartISO) {
         state.lastDayStart = todayStartISO;
         state.hasUpdatedToday = 0;
@@ -40,31 +39,26 @@ async function processReminders(client) {
           .setColor(config.embedColor)
           .setTitle('New Streak Day Started')
           .setDescription(
-            `A new streak day has begun!\n` +
-            `Send a message in this channel to update your streak.`
+            `A new streak day has begun!\nSend a message in this channel to update your streak.`
           );
 
         await channel.send({ content: `<@&${config.reminderRoleId}>`, embeds: [embed] });
       }
 
-      // If user already updated today → skip
       if (state.hasUpdatedToday) continue;
 
-      // Reminder hours (2h, 4h, 6h)
       if (config.reminderHours.includes(diffHours)) {
         const embed = new EmbedBuilder()
           .setColor(config.embedColor)
           .setTitle('Streak Reminder')
           .setDescription(
-            `You haven't updated your streak yet today.\n` +
-            `Send a message in this channel to keep it alive!`
+            `You haven't updated your streak yet today.\nSend a message in this channel to keep it alive!`
           )
           .setFooter({ text: `Hour ${diffHours} since day start` });
 
         await channel.send({ content: `<@${userId}>`, embeds: [embed] });
       }
 
-      // RESET HOUR (7h)
       if (diffHours === config.resetHour) {
         const streak = await applyMissedReset(userId);
 
@@ -73,7 +67,7 @@ async function processReminders(client) {
           .setTitle('Streak Failed')
           .setDescription(
             `You missed your streak window.\n` +
-            `Your streak has been reset to **${streak.currentStreak}**.\n\n` +
+            `Your streak has entered recovery mode.\n\n` +
             `You can recover it for up to **${config.maxRecoveryDays} days**.\n` +
             `Each recovery cuts **${config.recoveryCutPercentage * 100}%** of your streak (rounded up).`
           );
@@ -87,7 +81,7 @@ async function processReminders(client) {
 function scheduleRemindersLoop(client) {
   setInterval(() => {
     processReminders(client).catch(console.error);
-  }, 60 * 1000); // check every minute
+  }, 60 * 1000);
 }
 
 module.exports = { scheduleRemindersLoop };
