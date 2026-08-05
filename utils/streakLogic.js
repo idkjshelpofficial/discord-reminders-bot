@@ -152,14 +152,16 @@ async function applyMissedReset(userId) {
   return streak;
 }
 
-// ROLE UPDATES
 async function updateStreakRoles(member, currentStreak) {
   const rolesToGive = [];
   const rolesToRemove = [];
 
   for (const r of config.streakRoles) {
-    if (currentStreak >= r.min) rolesToGive.push(r.roleId);
-    else rolesToRemove.push(r.roleId);
+    if (currentStreak >= r.min) {
+      rolesToGive.push(r.roleId);
+    } else {
+      rolesToRemove.push(r.roleId);
+    }
   }
 
   for (const roleId of rolesToGive) {
@@ -174,6 +176,7 @@ async function updateStreakRoles(member, currentStreak) {
     }
   }
 }
+
 
 module.exports = {
   getUserStreak,
