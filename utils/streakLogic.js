@@ -185,6 +185,7 @@ async function updateStreakRoles(member, currentStreak) {
   }
 }
 
+
 // -------------------- EXPORT EVERYTHING --------------------
 module.exports = {
   getUserStreak,
