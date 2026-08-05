@@ -7,9 +7,12 @@
   "resetHour": 7,
   "maxRecoveryDays": 3,
   "recoveryCutPercentage": 0.25,
-  "streakRoles": [
-    { "min": 1, "roleId": "ROLE_ID_FOR_1+" },
-    { "min": 7, "roleId": "ROLE_ID_FOR_7+" },
-    { "min": 30, "roleId": "ROLE_ID_FOR_30+" }
-  ]
+"streakRoles": [
+  { "min": 10,  "roleId": "1533579781000659005" },
+  { "min": 25,  "roleId": "1533579409724801135" },
+  { "min": 50,  "roleId": "1523122836833833100" },
+  { "min": 100, "roleId": "1523123115566039253" },
+  { "min": 150, "roleId": "1533579083534041269" },
+  { "min": 200, "roleId": "1533544370912104648" }
+]
 }
