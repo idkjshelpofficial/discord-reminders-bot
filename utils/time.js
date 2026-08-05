@@ -4,20 +4,30 @@ function getNow() {
   return new Date();
 }
 
-function getDayStart(date = new Date()) {
+// Convert "HH:MM" (like "15:30") into a Date object for today
+function getDayStart(now) {
   const [hour, minute] = config.dayStart.split(':').map(Number);
-  const d = new Date(date);
-  d.setHours(hour, minute, 0, 0);
-  return d;
+
+  const start = new Date(now);
+  start.setHours(hour, minute, 0, 0);
+
+  return start;
 }
 
-function isSameStreakDay(lastCheckInISO) {
-  if (!lastCheckInISO) return false;
+// Compare lastCheckIn with today's start time
+function isSameStreakDay(lastCheckIn) {
+  if (!lastCheckIn) return false;
 
   const now = getNow();
-  const last = new Date(lastCheckInISO);
+  const todayStart = getDayStart(now);
 
-  return getDayStart(now).toDateString() === getDayStart(last).toDateString();
+  const last = new Date(lastCheckIn);
+
+  return last >= todayStart;
 }
 
-module.exports = { getNow, getDayStart, isSameStreakDay };
+module.exports = {
+  getNow,
+  getDayStart,
+  isSameStreakDay
+};
