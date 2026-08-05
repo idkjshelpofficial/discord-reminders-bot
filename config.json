@@ -1,22 +1,15 @@
 {
-  "dayStart": "15:30",
-  "embedColor": "#FF0000",
-  "timezone": "America/New_York",
-
   "streakChannelId": "1523015791564427315",
   "reminderRoleId": "1524545537510998078",
-
+  "embedColor": 16776960,
+  "dayStart": "15:30",
   "reminderHours": [2, 4, 6],
   "resetHour": 7,
-  "recoveryCutPercentage": 0.25,
   "maxRecoveryDays": 3,
-
+  "recoveryCutPercentage": 0.25,
   "streakRoles": [
-    { "roleId": "1533579781000659005", "min": 10 },
-    { "roleId": "1533579409724801135", "min": 25 },
-    { "roleId": "1523122836833833100", "min": 50 },
-    { "roleId": "1523123115566039253", "min": 100 },
-    { "roleId": "1533579083534041269", "min": 150 },
-    { "roleId": "1533544370912104648", "min": 200 }
+    { "min": 1, "roleId": "ROLE_ID_FOR_1+" },
+    { "min": 7, "roleId": "ROLE_ID_FOR_7+" },
+    { "min": 30, "roleId": "ROLE_ID_FOR_30+" }
   ]
 }
