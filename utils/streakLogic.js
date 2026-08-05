@@ -102,37 +102,22 @@ async function handleMessageStreak(userId) {
   const streak = await getUserStreak(userId);
   const state = await getReminderState(userId);
 
-  const todayStart = getDayStart(now).toISOString();
-
+  // Determine if it's a new streak day
   const isNewDay = !isSameStreakDay(streak.lastCheckIn);
-
-  if (state.lastDayStart !== todayStart) {
-    state.lastDayStart = todayStart;
-    state.hasUpdatedToday = 0;
-  }
 
   let justUpdated = false;
 
-  if (streak.inRecoveryMode) {
-    if (streak.recoveryDaysUsed <= config.maxRecoveryDays) {
-      const cut = 1 - config.recoveryCutPercentage;
-      streak.currentStreak = Math.ceil(streak.currentStreak * cut);
-      streak.inRecoveryMode = 0;
-      streak.recoveryDaysUsed = 0;
-      justUpdated = true;
-    } else {
-      streak.inRecoveryMode = 0;
+  if (isNewDay) {
+    streak.currentStreak += 1;
+
+    if (streak.currentStreak > streak.bestStreak) {
+      streak.bestStreak = streak.currentStreak;
     }
-  } else {
-    if (isNewDay) {
-      streak.currentStreak += 1;
-      if (streak.currentStreak > streak.bestStreak) {
-        streak.bestStreak = streak.currentStreak;
-      }
-      justUpdated = true;
-    }
+
+    justUpdated = true;
   }
 
+  // Update timestamps
   streak.lastCheckIn = nowISO;
   state.hasUpdatedToday = 1;
 
@@ -141,6 +126,7 @@ async function handleMessageStreak(userId) {
 
   return { ...streak, justUpdated };
 }
+
 
 
 // -------------------- MISSED RESET --------------------
