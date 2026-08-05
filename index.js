@@ -7,12 +7,14 @@ const {
   REST,
   Routes
 } = require('discord.js');
+
 const path = require('path');
 const fs = require('fs');
 const config = require('./config.json');
+
 const { initDB } = require('./utils/db');
 const { scheduleRemindersLoop } = require('./utils/reminderLogic');
-const { handleMessageStreak } = require('./utils/streakLogic');
+const { handleMessageStreak, updateStreakRoles } = require('./utils/streakLogic');
 
 const client = new Client({
   intents: [
@@ -25,13 +27,17 @@ const client = new Client({
 
 client.commands = new Collection();
 
+// Load slash commands
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
+
 if (fs.existsSync(commandsPath)) {
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
     const command = require(filePath);
+
     if ('data' in command && 'execute' in command) {
       client.commands.set(command.data.name, command);
       commands.push(command.data.toJSON());
@@ -43,6 +49,7 @@ client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
   try {
     await rest.put(
       Routes.applicationCommands(client.user.id),
@@ -54,10 +61,10 @@ client.once('ready', async () => {
   }
 
   await initDB();
-  scheduleRemindersLoop(client, config);
+  scheduleRemindersLoop(client);
 });
 
-// Slash commands
+// Slash command handler
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -68,7 +75,9 @@ client.on('interactionCreate', async interaction => {
     await command.execute(interaction);
   } catch (error) {
     console.error(error);
+
     const reply = { content: 'There was an error executing this command.', ephemeral: true };
+
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp(reply);
     } else {
@@ -85,6 +94,9 @@ client.on('messageCreate', async message => {
   try {
     const streak = await handleMessageStreak(message.author.id);
 
+    // ⭐ Update streak roles
+    await updateStreakRoles(message.member, streak.currentStreak);
+
     if (streak.justUpdated) {
       await message.reply(
         `🔥 Streak Updated!\nCurrent streak: **${streak.currentStreak}**\nBest streak: **${streak.bestStreak}**`
@@ -92,6 +104,7 @@ client.on('messageCreate', async message => {
     } else {
       await message.reply(`🕒 You already updated your streak today.`);
     }
+
   } catch (err) {
     console.error('Error updating streak from message:', err);
   }
