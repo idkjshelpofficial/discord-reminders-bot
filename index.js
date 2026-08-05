@@ -5,8 +5,7 @@ const {
   Partials,
   Collection,
   REST,
-  Routes,
-  EmbedBuilder
+  Routes
 } = require('discord.js');
 const path = require('path');
 const fs = require('fs');
@@ -26,7 +25,6 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Load command files (remind, checkin still exist if you want them)
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
@@ -59,7 +57,7 @@ client.once('ready', async () => {
   scheduleRemindersLoop(client, config);
 });
 
-// Slash commands (remind/checkin)
+// Slash commands
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -70,10 +68,11 @@ client.on('interactionCreate', async interaction => {
     await command.execute(interaction);
   } catch (error) {
     console.error(error);
+    const reply = { content: 'There was an error executing this command.', ephemeral: true };
     if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: 'There was an error executing this command.', ephemeral: true });
+      await interaction.followUp(reply);
     } else {
-      await interaction.reply({ content: 'There was an error executing this command.', ephemeral: true });
+      await interaction.reply(reply);
     }
   }
 });
@@ -93,7 +92,6 @@ client.on('messageCreate', async message => {
     } else {
       await message.reply(`🕒 You already updated your streak today.`);
     }
-
   } catch (err) {
     console.error('Error updating streak from message:', err);
   }
