@@ -14,7 +14,7 @@ function getDayStart(now) {
   return start;
 }
 
-// Compare lastCheckIn with today's start time
+// Correct logic: lastCheckIn must be AFTER today's start
 function isSameStreakDay(lastCheckIn) {
   if (!lastCheckIn) return false;
 
@@ -23,6 +23,7 @@ function isSameStreakDay(lastCheckIn) {
 
   const last = new Date(lastCheckIn);
 
+  // If last check-in happened AFTER today's start → same streak day
   return last >= todayStart;
 }
 
