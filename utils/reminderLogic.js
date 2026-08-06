@@ -2,11 +2,13 @@ const { getNow, getDayStart } = require('./time');
 const {
   applyMissedReset,
   getReminderState,
-  saveReminderState
+  saveReminderState,
+  getUserStreak
 } = require('./streakLogic');
 const config = require('../config.json');
 const { EmbedBuilder } = require('discord.js');
 
+// Get all users with the reminder role
 async function getUsersWithReminderRole(guild) {
   const role = guild.roles.cache.get(config.reminderRoleId);
   if (!role) return [];
@@ -26,10 +28,17 @@ async function processReminders(client) {
     const userIds = await getUsersWithReminderRole(guild);
 
     for (const userId of userIds) {
+      const streak = await getUserStreak(userId);
+
+      // ⭐ ONLY remind users who have started a streak
+      if (streak.currentStreak === 0 && streak.lastCheckIn === null) {
+        continue;
+      }
+
       const state = await getReminderState(userId);
       const todayStartISO = dayStart.toISOString();
 
-      // New day start: reset state + ping reminder role
+      // ⭐ NEW DAY START — ping role ONCE
       if (state.lastDayStart !== todayStartISO) {
         state.lastDayStart = todayStartISO;
         state.hasUpdatedToday = 0;
@@ -45,8 +54,10 @@ async function processReminders(client) {
         await channel.send({ content: `<@&${config.reminderRoleId}>`, embeds: [embed] });
       }
 
+      // ⭐ If user already updated today → skip
       if (state.hasUpdatedToday) continue;
 
+      // ⭐ Reminder hours (2h, 4h, 6h)
       if (config.reminderHours.includes(diffHours)) {
         const embed = new EmbedBuilder()
           .setColor(config.embedColor)
@@ -59,8 +70,9 @@ async function processReminders(client) {
         await channel.send({ content: `<@${userId}>`, embeds: [embed] });
       }
 
+      // ⭐ RESET HOUR (7h) — individual ping ONLY when they fail
       if (diffHours === config.resetHour) {
-        const streak = await applyMissedReset(userId);
+        const updatedStreak = await applyMissedReset(userId);
 
         const embed = new EmbedBuilder()
           .setColor(config.embedColor)
