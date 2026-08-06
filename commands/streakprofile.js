@@ -5,11 +5,16 @@ const config = require('../config.json');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('streakprofile')
-    .setDescription('Shows your streak profile'),
+    .setDescription('Shows streak profile')
+    .addUserOption(opt =>
+      opt.setName('user')
+        .setDescription('View someone else’s streak')
+        .setRequired(false)
+    ),
 
   async execute(interaction) {
-    const userId = interaction.user.id;
-    const streak = await getUserStreak(userId);
+    const target = interaction.options.getUser('user') || interaction.user;
+    const streak = await getUserStreak(target.id);
 
     const roles = config.streakRoles
       .filter(r => streak.currentStreak >= r.min)
@@ -18,7 +23,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setColor(config.embedColor)
-      .setTitle(`${interaction.user.username}'s Streak Profile`)
+      .setTitle(`${target.username}'s Streak Profile`)
       .addFields(
         { name: '🔥 Current Streak', value: `${streak.currentStreak}`, inline: true },
         { name: '🏆 Best Streak', value: `${streak.bestStreak}`, inline: true },
@@ -26,8 +31,7 @@ module.exports = {
         { name: '♻️ Recovery Mode', value: streak.inRecoveryMode ? 'Active' : 'Inactive', inline: true },
         { name: '📅 Recovery Days Used', value: `${streak.recoveryDaysUsed}`, inline: true },
         { name: '🎖️ Streak Roles', value: roles }
-      )
-      .setFooter({ text: 'Streak system by Yaqoob' });
+      );
 
     await interaction.reply({ embeds: [embed] });
   }
