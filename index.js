@@ -27,7 +27,7 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Load slash commands
+// ⭐ LOAD COMMANDS ⭐
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
 
@@ -64,7 +64,7 @@ client.once('ready', async () => {
   scheduleRemindersLoop(client);
 });
 
-// Slash command handler
+// ⭐ SLASH COMMAND HANDLER ⭐
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -86,7 +86,7 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// Message-based streak updates
+// ⭐ MESSAGE STREAK HANDLER ⭐
 client.on('messageCreate', async message => {
   if (message.author.bot) return;
   if (message.channel.id !== config.streakChannelId) return;
@@ -94,7 +94,6 @@ client.on('messageCreate', async message => {
   try {
     const streak = await handleMessageStreak(message.author.id);
 
-    // ⭐ Update streak roles
     await updateStreakRoles(message.member, streak.currentStreak);
 
     if (streak.justUpdated) {
