@@ -27,22 +27,16 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// ⭐ LOAD COMMANDS ⭐
+// ⭐ ONLY LOAD streakprofile.js ⭐
 const commands = [];
-const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = ['streakprofile.js'];
 
-if (fs.existsSync(commandsPath)) {
-  const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+  const filePath = path.join(__dirname, 'commands', file);
+  const command = require(filePath);
 
-  for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
-
-    if ('data' in command && 'execute' in command) {
-      client.commands.set(command.data.name, command);
-      commands.push(command.data.toJSON());
-    }
-  }
+  client.commands.set(command.data.name, command);
+  commands.push(command.data.toJSON());
 }
 
 client.once('ready', async () => {
@@ -55,7 +49,7 @@ client.once('ready', async () => {
       Routes.applicationCommands(client.user.id),
       { body: commands }
     );
-    console.log('Slash commands registered.');
+    console.log('Slash command registered: streakprofile');
   } catch (error) {
     console.error('Error registering commands:', error);
   }
@@ -75,14 +69,10 @@ client.on('interactionCreate', async interaction => {
     await command.execute(interaction);
   } catch (error) {
     console.error(error);
-
-    const reply = { content: 'There was an error executing this command.', ephemeral: true };
-
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(reply);
-    } else {
-      await interaction.reply(reply);
-    }
+    await interaction.reply({
+      content: 'There was an error executing this command.',
+      ephemeral: true
+    });
   }
 });
 
