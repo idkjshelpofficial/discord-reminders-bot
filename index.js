@@ -1,6 +1,5 @@
 require('dotenv').config();
 const {
-  console.log("DAY START FROM CONFIG:", config.dayStart);
   Client,
   GatewayIntentBits,
   Partials,
@@ -12,6 +11,8 @@ const {
 const path = require('path');
 const fs = require('fs');
 const config = require('./config.json');
+
+console.log("DAY START FROM CONFIG:", config.dayStart); // ⭐ THIS IS THE CORRECT PLACE
 
 const { initDB } = require('./utils/db');
 const { scheduleRemindersLoop } = require('./utils/reminderLogic');
