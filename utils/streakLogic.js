@@ -1,6 +1,6 @@
-const { getDB } = require('./db');
-const { getNow, isSameStreakDay, getDayStart } = require('./time');
+const { getNow, getDayStart } = require('./time');
 const config = require('../config.json');
+const { getDB } = require('./db');
 
 // GET USER STREAK
 function getUserStreak(userId) {
@@ -89,16 +89,29 @@ function saveReminderState(state) {
   });
 }
 
-// MESSAGE STREAK UPDATE
+// ⭐ FIXED NEW-DAY DETECTION
+function isNewDay(lastCheckIn) {
+  if (!lastCheckIn) return true;
+
+  const now = getNow();
+  const todayStart = getDayStart(now);
+  const last = new Date(lastCheckIn);
+
+  return last < todayStart;
+}
+
+// ⭐ FIXED MESSAGE STREAK UPDATE
 async function handleMessageStreak(userId) {
   const now = getNow();
   const nowISO = now.toISOString();
+
   const streak = await getUserStreak(userId);
   const state = await getReminderState(userId);
 
   const todayStartISO = getDayStart(now).toISOString();
-  const isNewDay = !isSameStreakDay(streak.lastCheckIn);
+  const newDay = isNewDay(streak.lastCheckIn);
 
+  // Reset daily state if new day
   if (state.lastDayStart !== todayStartISO) {
     state.lastDayStart = todayStartISO;
     state.hasUpdatedToday = 0;
@@ -106,6 +119,7 @@ async function handleMessageStreak(userId) {
 
   let justUpdated = false;
 
+  // Recovery mode
   if (streak.inRecoveryMode) {
     if (streak.recoveryDaysUsed < config.maxRecoveryDays) {
       const cut = 1 - config.recoveryCutPercentage;
@@ -120,7 +134,10 @@ async function handleMessageStreak(userId) {
       streak.fails += 1;
       justUpdated = true;
     }
-  } else if (isNewDay) {
+  }
+
+  // ⭐ FIXED: Only increment ONCE per new day
+  else if (newDay) {
     streak.currentStreak += 1;
     if (streak.currentStreak > streak.bestStreak) {
       streak.bestStreak = streak.currentStreak;
@@ -137,31 +154,14 @@ async function handleMessageStreak(userId) {
   return { ...streak, justUpdated };
 }
 
-// MISSED RESET
-async function applyMissedReset(userId) {
-  const streak = await getUserStreak(userId);
-  const state = await getReminderState(userId);
-
-  if (state.hasUpdatedToday) return streak;
-
-  streak.inRecoveryMode = 1;
-  streak.recoveryDaysUsed += 1;
-  streak.fails += 1;
-
-  await saveUserStreak(streak);
-  return streak;
-}
-
+// ROLE UPDATES
 async function updateStreakRoles(member, currentStreak) {
   const rolesToGive = [];
   const rolesToRemove = [];
 
   for (const r of config.streakRoles) {
-    if (currentStreak >= r.min) {
-      rolesToGive.push(r.roleId);
-    } else {
-      rolesToRemove.push(r.roleId);
-    }
+    if (currentStreak >= r.min) rolesToGive.push(r.roleId);
+    else rolesToRemove.push(r.roleId);
   }
 
   for (const roleId of rolesToGive) {
@@ -177,13 +177,11 @@ async function updateStreakRoles(member, currentStreak) {
   }
 }
 
-
 module.exports = {
   getUserStreak,
   saveUserStreak,
   getReminderState,
   saveReminderState,
   handleMessageStreak,
-  applyMissedReset,
   updateStreakRoles
 };
