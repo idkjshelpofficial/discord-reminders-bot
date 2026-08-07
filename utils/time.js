@@ -6,8 +6,12 @@ function getNow() {
 
 function getDayStart(now) {
   const [hour, minute] = config.dayStart.split(':').map(Number);
+
+  // Convert local EDT time to UTC
+  const utcHour = hour + 4; // EDT is UTC-4
+
   const start = new Date(now);
-  start.setHours(hour, minute, 0, 0);
+  start.setUTCHours(utcHour, minute, 0, 0);
   return start;
 }
 
