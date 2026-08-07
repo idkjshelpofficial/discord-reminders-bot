@@ -1,5 +1,6 @@
 require('dotenv').config();
 const {
+  console.log("DAY START FROM CONFIG:", config.dayStart);
   Client,
   GatewayIntentBits,
   Partials,
